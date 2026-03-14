@@ -110,12 +110,6 @@ export default function LoginConvidadoPage() {
         <p className="font-[family-name:var(--font-playfair)] text-2xl font-semibold text-[#2e3526]">
           Cha de casa nova {settings.coupleName}
         </p>
-        <Link
-          href="/admin/login"
-          className="text-sm font-semibold text-[#5e6a2f] hover:text-[#77843f]"
-        >
-          Acesso administrativo
-        </Link>
       </div>
 
       <main className="mx-auto grid w-full max-w-[1200px] overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-[var(--color-paper)] md:grid-cols-2">
@@ -216,13 +210,6 @@ export default function LoginConvidadoPage() {
               {submitting ? "Entrando..." : "Entrar no Portal"}
             </button>
           </form>
-
-          <p className="mt-6 text-sm text-[#69705e]">
-            Nao possui conta?{" "}
-            <Link href="/cadastro" className="font-semibold text-[#5a652f]">
-              Criar agora
-            </Link>
-          </p>
         </section>
       </main>
     </div>

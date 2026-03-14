@@ -73,12 +73,6 @@ export default function CadastroConvidadoPage() {
         <p className="font-[family-name:var(--font-playfair)] text-2xl font-semibold text-[#2e3526]">
           Cha de casa nova {settings.coupleName}
         </p>
-        <Link
-          href="/"
-          className="text-sm font-semibold text-[#5e6a2f] hover:text-[#77843f]"
-        >
-          Voltar para login
-        </Link>
       </div>
 
       <main className="mx-auto grid w-full max-w-[1200px] overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-[var(--color-paper)] md:grid-cols-2">

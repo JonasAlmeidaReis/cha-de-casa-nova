@@ -200,9 +200,9 @@ export default function ConvidadoPage() {
 
         <main>
           <section id="inicio" className="scroll-mt-24 overflow-hidden">
-            <div className="grid w-full h-[480px] md:min-h-[400px] md:grid-cols-2">
+            <div className="grid w-full md:h-[480px] md:min-h-[400px] md:grid-cols-2">
               <div
-                className={`${
+                className={`h-[380px] md:h-auto ${
                   settings.coupleImageUrl
                     ? "bg-cover bg-center"
                     : "bg-[linear-gradient(140deg,#e3ead2,#cad5b2,#aab985)]"
