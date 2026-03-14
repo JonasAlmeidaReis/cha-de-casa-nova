@@ -1,0 +1,298 @@
+rules_version = "2";
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasUserProfile() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return hasUserProfile()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+
+    function isAdmin() {
+      return userRole() == "admin";
+    }
+
+    function isGuest() {
+      return userRole() == "guest";
+    }
+
+    function nonEmptyString(value) {
+      return value is string && value.size() > 0;
+    }
+
+    function validReservationStatus(value) {
+      return value == "available" || value == "reserved";
+    }
+
+    function validReservationMethod(value) {
+      return value == "marketplace" || value == "pix" || value == null;
+    }
+
+    function validGiftKeys(data) {
+      return data.keys().hasAll([
+        "name",
+        "priceCents",
+        "productUrl",
+        "imageUrl",
+        "imagePath",
+        "isActive",
+        "reservationStatus",
+        "reservedByUid",
+        "reservedByName",
+        "reservedByEmail",
+        "reservationMethod",
+        "pixReceiptConfirmedAt",
+        "pixReceiptConfirmedBy",
+        "reservedAt",
+        "createdAt",
+        "updatedAt",
+        "createdBy",
+        "updatedBy"
+      ]) &&
+      data.keys().hasOnly([
+        "name",
+        "priceCents",
+        "productUrl",
+        "imageUrl",
+        "imagePath",
+        "isActive",
+        "reservationStatus",
+        "reservedByUid",
+        "reservedByName",
+        "reservedByEmail",
+        "reservationMethod",
+        "pixReceiptConfirmedAt",
+        "pixReceiptConfirmedBy",
+        "reservedAt",
+        "createdAt",
+        "updatedAt",
+        "createdBy",
+        "updatedBy"
+      ]);
+    }
+
+    function validGiftReservationState(data) {
+      let availableFlow = (
+        data.reservationStatus == "available" &&
+        data.reservedByUid == null &&
+        data.reservedByName == null &&
+        data.reservedByEmail == null &&
+        data.reservationMethod == null &&
+        data.pixReceiptConfirmedAt == null &&
+        data.pixReceiptConfirmedBy == null &&
+        data.reservedAt == null
+      );
+      let reservedMarketplaceFlow = (
+        data.reservationStatus == "reserved" &&
+        nonEmptyString(data.reservedByUid) &&
+        nonEmptyString(data.reservedByName) &&
+        nonEmptyString(data.reservedByEmail) &&
+        data.reservationMethod == "marketplace" &&
+        data.pixReceiptConfirmedAt == null &&
+        data.pixReceiptConfirmedBy == null &&
+        data.reservedAt is timestamp
+      );
+      let reservedPixPendingFlow = (
+        data.reservationStatus == "reserved" &&
+        nonEmptyString(data.reservedByUid) &&
+        nonEmptyString(data.reservedByName) &&
+        nonEmptyString(data.reservedByEmail) &&
+        data.reservationMethod == "pix" &&
+        data.pixReceiptConfirmedAt == null &&
+        data.pixReceiptConfirmedBy == null &&
+        data.reservedAt is timestamp
+      );
+      let reservedPixConfirmedFlow = (
+        data.reservationStatus == "reserved" &&
+        nonEmptyString(data.reservedByUid) &&
+        nonEmptyString(data.reservedByName) &&
+        nonEmptyString(data.reservedByEmail) &&
+        data.reservationMethod == "pix" &&
+        data.pixReceiptConfirmedAt is timestamp &&
+        nonEmptyString(data.pixReceiptConfirmedBy) &&
+        data.reservedAt is timestamp
+      );
+      let reservedLegacyFlow = (
+        data.reservationStatus == "reserved" &&
+        nonEmptyString(data.reservedByUid) &&
+        nonEmptyString(data.reservedByName) &&
+        nonEmptyString(data.reservedByEmail) &&
+        data.reservationMethod == null &&
+        data.pixReceiptConfirmedAt == null &&
+        data.pixReceiptConfirmedBy == null &&
+        data.reservedAt is timestamp
+      );
+
+      return availableFlow ||
+        reservedMarketplaceFlow ||
+        reservedPixPendingFlow ||
+        reservedPixConfirmedFlow ||
+        reservedLegacyFlow;
+    }
+
+    function validGiftData(data) {
+      return validGiftKeys(data) &&
+        nonEmptyString(data.name) &&
+        data.priceCents is int &&
+        data.priceCents > 0 &&
+        nonEmptyString(data.productUrl) &&
+        nonEmptyString(data.imageUrl) &&
+        nonEmptyString(data.imagePath) &&
+        data.isActive is bool &&
+        validReservationStatus(data.reservationStatus) &&
+        validReservationMethod(data.reservationMethod) &&
+        validGiftReservationState(data) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        nonEmptyString(data.createdBy) &&
+        nonEmptyString(data.updatedBy);
+    }
+
+    function isGuestReservationUpdate() {
+      let changedKeys = request.resource.data.diff(resource.data).changedKeys();
+      let reserveFlow = resource.data.reservationStatus == "available" &&
+        request.resource.data.reservationStatus == "reserved" &&
+        request.resource.data.isActive == true &&
+        request.resource.data.reservedByUid == request.auth.uid &&
+        nonEmptyString(request.resource.data.reservedByName) &&
+        nonEmptyString(request.resource.data.reservedByEmail) &&
+        (request.resource.data.reservationMethod == "marketplace" ||
+          request.resource.data.reservationMethod == "pix") &&
+        request.resource.data.pixReceiptConfirmedAt == null &&
+        request.resource.data.pixReceiptConfirmedBy == null &&
+        request.resource.data.reservedAt == request.time &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.updatedBy == request.auth.uid;
+      let cancelFlow = resource.data.reservationStatus == "reserved" &&
+        resource.data.reservedByUid == request.auth.uid &&
+        request.resource.data.reservationStatus == "available" &&
+        request.resource.data.reservedByUid == null &&
+        request.resource.data.reservedByName == null &&
+        request.resource.data.reservedByEmail == null &&
+        request.resource.data.reservationMethod == null &&
+        request.resource.data.pixReceiptConfirmedAt == null &&
+        request.resource.data.pixReceiptConfirmedBy == null &&
+        request.resource.data.reservedAt == null &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.updatedBy == request.auth.uid;
+
+      return isGuest() &&
+        changedKeys.hasOnly([
+          "reservationStatus",
+          "reservedByUid",
+          "reservedByName",
+          "reservedByEmail",
+          "reservationMethod",
+          "pixReceiptConfirmedAt",
+          "pixReceiptConfirmedBy",
+          "reservedAt",
+          "updatedAt",
+          "updatedBy"
+        ]) &&
+        validGiftData(request.resource.data) &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.createdBy == resource.data.createdBy &&
+        (reserveFlow || cancelFlow);
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if isSignedIn() &&
+        request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly([
+          "displayName",
+          "email",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]) &&
+        nonEmptyString(request.resource.data.displayName) &&
+        nonEmptyString(request.resource.data.email) &&
+        request.resource.data.role == "guest" &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time;
+      allow update: if isSignedIn() &&
+        request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly([
+          "displayName",
+          "email",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]) &&
+        nonEmptyString(request.resource.data.displayName) &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /settings/event {
+      allow read: if true;
+      allow write: if isAdmin() &&
+        request.resource.data.keys().hasAll([
+          "coupleName",
+          "eventDate",
+          "story",
+          "venue",
+          "pixKey",
+          "whatsappNumber",
+          "coupleImageUrl",
+          "coupleImagePath",
+          "updatedAt",
+          "updatedBy"
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          "coupleName",
+          "eventDate",
+          "story",
+          "venue",
+          "pixKey",
+          "whatsappNumber",
+          "coupleImageUrl",
+          "coupleImagePath",
+          "updatedAt",
+          "updatedBy"
+        ]) &&
+        nonEmptyString(request.resource.data.coupleName) &&
+        request.resource.data.eventDate is timestamp &&
+        nonEmptyString(request.resource.data.story) &&
+        nonEmptyString(request.resource.data.venue) &&
+        nonEmptyString(request.resource.data.pixKey) &&
+        nonEmptyString(request.resource.data.whatsappNumber) &&
+        request.resource.data.coupleImageUrl is string &&
+        request.resource.data.coupleImagePath is string &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    match /gifts/{giftId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() &&
+        validGiftData(request.resource.data) &&
+        request.resource.data.reservationStatus == "available" &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.updatedBy == request.auth.uid;
+      allow update: if (isAdmin() &&
+          validGiftData(request.resource.data) &&
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.createdBy == resource.data.createdBy &&
+          request.resource.data.updatedAt == request.time &&
+          request.resource.data.updatedBy == request.auth.uid) ||
+        isGuestReservationUpdate();
+      allow delete: if isAdmin() && resource.data.reservationStatus == "available";
+    }
+  }
+}
