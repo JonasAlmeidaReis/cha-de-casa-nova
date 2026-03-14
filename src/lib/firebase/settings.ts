@@ -129,7 +129,7 @@ export async function saveEventSettings(input: {
       const storage = getFirebaseStorage();
       await deleteObject(ref(storage, input.currentImagePath));
     } catch {
-      // Se a imagem antiga nao existir mais, segue o fluxo normal.
+      // Se a imagem antiga não existir mais, segue o fluxo normal.
     }
   }
 }

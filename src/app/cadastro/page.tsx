@@ -61,7 +61,7 @@ export default function CadastroConvidadoPage() {
       router.replace("/convidado");
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel concluir o cadastro. Revise os dados e tente novamente.");
+      setError("Não foi possível concluir o cadastro. Revise os dados e tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +71,7 @@ export default function CadastroConvidadoPage() {
     <div className="min-h-screen px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between pb-6">
         <p className="font-[family-name:var(--font-playfair)] text-2xl font-semibold text-[#2e3526]">
-          Cha de casa nova {settings.coupleName}
+          Chá de casa nova {settings.coupleName}
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function CadastroConvidadoPage() {
               Estamos te esperando
             </h1>
             <p className="mt-4 max-w-md text-sm text-[#e3e9d7] md:text-base">
-              Crie sua conta para acessar os presentes disponiveis e participar desse
+              Crie sua conta para acessar os presentes disponíveis e participar desse
               momento com a gente.
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function CadastroConvidadoPage() {
           </form>
 
           <p className="mt-6 text-sm text-[#69705e]">
-            Ja possui conta?{" "}
+            Já possui conta?{" "}
             <Link href="/" className="font-semibold text-[#5a652f]">
               Fazer login
             </Link>
@@ -167,4 +167,3 @@ export default function CadastroConvidadoPage() {
     </div>
   );
 }
-

@@ -71,7 +71,7 @@ export default function LoginConvidadoPage() {
       if (!userProfile) {
         await signOut(auth);
         setError(
-          "Seu perfil nao foi encontrado no banco. Fale com os noivos para liberar seu acesso.",
+          "Seu perfil não foi encontrado no banco. Fale com os noivos para liberar seu acesso.",
         );
         return;
       }
@@ -79,7 +79,7 @@ export default function LoginConvidadoPage() {
       router.replace(resolveRoute(userProfile.role));
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel entrar. Verifique e-mail e senha.");
+      setError("Não foi possível entrar. Verifique e-mail e senha.");
     } finally {
       setSubmitting(false);
     }
@@ -97,10 +97,10 @@ export default function LoginConvidadoPage() {
     try {
       const auth = getFirebaseAuth();
       await sendPasswordResetEmail(auth, email.trim());
-      setNotice("Enviamos um e-mail para redefinicao de senha.");
+      setNotice("Enviamos um e-mail para redefinição de senha.");
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel enviar o e-mail de recuperacao.");
+      setError("Não foi possível enviar o e-mail de recuperação.");
     }
   };
 
@@ -108,7 +108,7 @@ export default function LoginConvidadoPage() {
     <div className="min-h-screen px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between pb-6">
         <p className="font-[family-name:var(--font-playfair)] text-2xl font-semibold text-[#2e3526]">
-          Cha de casa nova {settings.coupleName}
+          Chá de casa nova {settings.coupleName}
         </p>
       </div>
 
@@ -130,7 +130,7 @@ export default function LoginConvidadoPage() {
               Um brinde ao amor
             </h1>
             <p className="mt-4 max-w-md text-sm text-[#e3e9d7] md:text-base">
-              Estamos muito felizes em compartilhar este momento unico com voce.
+              Estamos muito felizes em compartilhar este momento único com você.
             </p>
           </div>
         </section>

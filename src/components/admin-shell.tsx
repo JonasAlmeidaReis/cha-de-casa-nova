@@ -15,10 +15,10 @@ type AdminShellProps = {
 };
 
 const navItems: Array<{ key: NavKey; label: string; href: string }> = [
-  { key: "dashboard", label: "Visao geral", href: "/admin/dashboard" },
+  { key: "dashboard", label: "Visão geral", href: "/admin/dashboard" },
   { key: "presentes", label: "Presentes", href: "/admin/presentes" },
   { key: "reservas", label: "Reservas", href: "/admin/reservas" },
-  { key: "configuracoes", label: "Configuracoes", href: "/admin/configuracoes" },
+  { key: "configuracoes", label: "Configurações", href: "/admin/configuracoes" },
 ];
 
 export function AdminShell({ active, children }: AdminShellProps) {

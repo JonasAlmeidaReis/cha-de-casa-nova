@@ -246,7 +246,7 @@ export async function updateGift(
       const storage = getFirebaseStorage();
       await deleteObject(ref(storage, currentGift.imagePath));
     } catch {
-      // Segue o fluxo caso a imagem antiga nao exista mais.
+      // Segue o fluxo caso a imagem antiga não exista mais.
     }
   }
 }
@@ -257,13 +257,13 @@ export async function deleteGift(giftId: string): Promise<void> {
   const snapshot = await getDoc(giftRef);
 
   if (!snapshot.exists()) {
-    throw new Error("Presente nao encontrado.");
+    throw new Error("Presente não encontrado.");
   }
 
   const gift = snapshot.data() as GiftRecord;
 
   if (gift.reservationStatus !== "available") {
-    throw new Error("Nao e possivel excluir um presente reservado.");
+    throw new Error("Não é possível excluir um presente reservado.");
   }
 
   await deleteDoc(giftRef);
@@ -273,7 +273,7 @@ export async function deleteGift(giftId: string): Promise<void> {
       const storage = getFirebaseStorage();
       await deleteObject(ref(storage, gift.imagePath));
     } catch {
-      // Segue caso a imagem ja tenha sido removida.
+      // Segue caso a imagem já tenha sido removida.
     }
   }
 }
@@ -291,12 +291,12 @@ export async function reserveGift(input: {
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(giftRef);
     if (!snapshot.exists()) {
-      throw new Error("Presente nao encontrado.");
+      throw new Error("Presente não encontrado.");
     }
 
     const gift = snapshot.data() as GiftRecord;
     if (!gift.isActive || gift.reservationStatus !== "available") {
-      throw new Error("Presente indisponivel para reserva.");
+      throw new Error("Presente indisponível para reserva.");
     }
 
     transaction.update(giftRef, {
@@ -325,19 +325,19 @@ export async function cancelGiftReservation(input: {
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(giftRef);
     if (!snapshot.exists()) {
-      throw new Error("Presente nao encontrado.");
+      throw new Error("Presente não encontrado.");
     }
 
     const gift = snapshot.data() as GiftRecord;
     if (gift.reservationStatus !== "reserved") {
-      throw new Error("Este presente nao possui reserva ativa.");
+      throw new Error("Este presente não possui reserva ativa.");
     }
 
     const canCancel =
       input.actorRole === "admin" || gift.reservedByUid === input.actorUid;
 
     if (!canCancel) {
-      throw new Error("Voce nao pode cancelar esta reserva.");
+      throw new Error("Você não pode cancelar esta reserva.");
     }
 
     transaction.update(giftRef, {
@@ -370,20 +370,20 @@ export async function confirmPixReceipt(input: {
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(giftRef);
     if (!snapshot.exists()) {
-      throw new Error("Presente nao encontrado.");
+      throw new Error("Presente não encontrado.");
     }
 
     const gift = snapshot.data() as GiftRecord;
     if (gift.reservationStatus !== "reserved") {
-      throw new Error("Este presente nao possui reserva ativa.");
+      throw new Error("Este presente não possui reserva ativa.");
     }
 
     if (gift.reservationMethod !== "pix") {
-      throw new Error("Este presente nao foi selecionado para pagamento via PIX.");
+      throw new Error("Este presente não foi selecionado para pagamento via PIX.");
     }
 
     if (gift.pixReceiptConfirmedAt) {
-      throw new Error("Recebimento de PIX ja confirmado.");
+      throw new Error("Recebimento de PIX já confirmado.");
     }
 
     transaction.update(giftRef, {

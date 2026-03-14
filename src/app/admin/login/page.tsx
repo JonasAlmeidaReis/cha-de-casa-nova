@@ -50,14 +50,14 @@ export default function AdminLoginPage() {
 
       if (!userProfile || userProfile.role !== "admin") {
         await signOut(auth);
-        setError("Este usuario nao possui permissao de administrador.");
+        setError("Este usuário não possui permissão de administrador.");
         return;
       }
 
       router.replace("/admin/dashboard");
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel entrar no painel admin.");
+      setError("Não foi possível entrar no painel admin.");
     } finally {
       setSubmitting(false);
     }
@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
           href="/"
           className="text-sm font-semibold text-[#5e6a2f] hover:text-[#77843f]"
         >
-          Voltar para area do convidado
+          Voltar para área do convidado
         </Link>
       </div>
 

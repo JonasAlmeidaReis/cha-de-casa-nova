@@ -11,12 +11,12 @@ import {
 import type { Gift } from "@/lib/firebase/models";
 import { formatCurrencyBRLFromCents } from "@/lib/formatters";
 
-type ReservaStatus = "Marketplace" | "PIX" | "Nao informado";
+type ReservaStatus = "Marketplace" | "PIX" | "Não informado";
 
 const statusStyles: Record<ReservaStatus, string> = {
   Marketplace: "bg-[#e5ecd3] text-[#4c5f2a]",
   PIX: "bg-[#f0ecd9] text-[#89703b]",
-  "Nao informado": "bg-[#e1e7d4] text-[#6f775f]",
+  "Não informado": "bg-[#e1e7d4] text-[#6f775f]",
 };
 
 function formatReservationDate(value: Date | null): string {
@@ -75,7 +75,7 @@ export function AdminReservasTable() {
       });
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel cancelar a reserva.");
+      setError("Não foi possível cancelar a reserva.");
     } finally {
       setLoadingCancelId(null);
     }
@@ -98,7 +98,7 @@ export function AdminReservasTable() {
       setNotice("Recebimento de PIX confirmado.");
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel confirmar o recebimento do PIX.");
+      setError("Não foi possível confirmar o recebimento do PIX.");
     } finally {
       setLoadingConfirmPixId(null);
     }
@@ -140,7 +140,7 @@ export function AdminReservasTable() {
               <th className="px-6 py-4 font-semibold">Forma</th>
               <th className="px-6 py-4 font-semibold">Data</th>
               <th className="px-6 py-4 font-semibold">PIX</th>
-              <th className="px-6 py-4 font-semibold">Acoes</th>
+              <th className="px-6 py-4 font-semibold">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -161,7 +161,7 @@ export function AdminReservasTable() {
                     ? "PIX"
                     : reserva.reservationMethod === "marketplace"
                       ? "Marketplace"
-                      : "Nao informado";
+                      : "Não informado";
 
                 return (
                   <tr key={reserva.id} className="border-t border-[#e6ecd8]">

@@ -79,13 +79,13 @@ export default function AdminPresentesPage() {
       setSuccess("");
       setDeletingGiftId(gift.id);
       await deleteGift(gift.id);
-      setSuccess("Presente excluido com sucesso.");
+      setSuccess("Presente excluído com sucesso.");
       if (editingGiftId === gift.id) {
         resetForm();
       }
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel excluir o presente.");
+      setError("Não foi possível excluir o presente.");
     } finally {
       setDeletingGiftId(null);
     }
@@ -105,12 +105,12 @@ export default function AdminPresentesPage() {
     const priceCents = parseCurrencyInputToCents(formState.priceInput);
 
     if (!name || !productUrl || !priceCents) {
-      setError("Preencha todos os campos obrigatorios de forma valida.");
+      setError("Preencha todos os campos obrigatórios de forma válida.");
       return;
     }
 
     if (!editingGiftId && !formState.imageFile) {
-      setError("A imagem do presente e obrigatoria no cadastro.");
+      setError("A imagem do presente é obrigatória no cadastro.");
       return;
     }
 
@@ -142,7 +142,7 @@ export default function AdminPresentesPage() {
       resetForm();
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel salvar o presente.");
+      setError("Não foi possível salvar o presente.");
     } finally {
       setSubmitting(false);
     }
@@ -164,7 +164,7 @@ export default function AdminPresentesPage() {
                     <th className="px-6 py-4 font-semibold">Presente</th>
                     <th className="px-6 py-4 font-semibold w-28">Valor</th>
                     <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold">Acoes</th>
+                    <th className="px-6 py-4 font-semibold">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -256,7 +256,7 @@ export default function AdminPresentesPage() {
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, name: event.target.value }))
                   }
-                  placeholder="Ex: Jogo de Tacas de Cristal"
+                  placeholder="Ex: Jogo de Taças de Cristal"
                   className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0 placeholder:text-[#9ca592]"
                 />
               </label>
@@ -358,4 +358,3 @@ export default function AdminPresentesPage() {
     </RequireAuth>
   );
 }
-

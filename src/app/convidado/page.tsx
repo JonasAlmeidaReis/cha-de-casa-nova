@@ -78,7 +78,7 @@ export default function ConvidadoPage() {
       );
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel reservar este presente.");
+      setError("Não foi possível reservar este presente.");
     } finally {
       setLoadingGiftId(null);
     }
@@ -102,7 +102,7 @@ export default function ConvidadoPage() {
       setNotice("Reserva cancelada com sucesso.");
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel cancelar a reserva.");
+      setError("Não foi possível cancelar a reserva.");
     } finally {
       setLoadingGiftId(null);
     }
@@ -119,7 +119,7 @@ export default function ConvidadoPage() {
 
   const mapIframeSrc = useMemo(() => {
     const venue = settings.venue.trim();
-    const query = venue ? encodeURIComponent(venue) : "Sao%20Paulo%20SP";
+    const query = encodeURIComponent(venue || "São Paulo SP");
     return `https://maps.google.com/maps?q=${query}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
   }, [settings.venue]);
 
@@ -152,7 +152,7 @@ export default function ConvidadoPage() {
               htmlFor="menu-toggle-convidado"
               className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[#cfd6bf] text-[#58604c] md:hidden"
             >
-              <span className="sr-only">Abrir menu de navegacao</span>
+              <span className="sr-only">Abrir menu de navegação</span>
               <span className="space-y-1.5">
                 <span className="block h-0.5 w-5 bg-current" />
                 <span className="block h-0.5 w-5 bg-current" />
@@ -162,13 +162,13 @@ export default function ConvidadoPage() {
 
             <nav className="hidden w-full flex-col gap-3 border-t border-[#cfd6bf] pt-4 text-sm font-semibold text-[#58604c] peer-checked:flex md:w-auto md:flex md:flex-row md:items-center md:gap-7 md:border-0 md:pt-0">
               <a href="#inicio" className="rounded-md px-2 py-1 hover:text-[#2c331f] md:px-0 md:py-0">
-                Inicio
+                Início
               </a>
               <a
                 href="#historia"
                 className="rounded-md px-2 py-1 hover:text-[#2c331f] md:px-0 md:py-0"
               >
-                Nossa Historia
+                Nossa História
               </a>
               <a
                 href="#presentes"
@@ -214,11 +214,11 @@ export default function ConvidadoPage() {
               <div className="flex items-center bg-[#f1f3e8] px-6 py-12 md:px-10 md:py-16 lg:px-14">
                 <div className="max-w-xl text-[#2a311e]">
                   <h1 className="reveal mt-5 text-4xl leading-tight font-semibold italic md:text-6xl">
-                    Junte-se a nos para celebrar o amor
+                    Junte-se a nós para celebrar o amor
                   </h1>
                   <p className="reveal mt-6 text-base text-[#5d6650]">
-                    Cada presente sera um pedaco da nossa nova casa. Obrigado por
-                    fazer parte da nossa historia.
+                    Cada presente será um pedaço da nossa nova casa. Obrigado por
+                    fazer parte da nossa história.
                   </p>
                   <a
                     href="#presentes"
@@ -234,10 +234,10 @@ export default function ConvidadoPage() {
           <section id="historia" className="scroll-mt-24 px-4 py-16 md:px-8 md:py-20">
             <div className="mx-auto max-w-[900px] text-center">
               <p className="text-xs tracking-[0.23em] text-[var(--color-gold)] uppercase">
-                O inicio de tudo
+                O início de tudo
               </p>
               <h2 className="mt-4 text-4xl font-semibold md:text-5xl">
-                Nossa Historia
+                Nossa História
               </h2>
               <p className="mt-6 text-base leading-8 text-[var(--color-muted)]">
                 {settings.story}
@@ -305,7 +305,7 @@ export default function ConvidadoPage() {
                             </span>
                           ) : (
                             <span className="rounded-full bg-[#e5ecd3] px-3 py-1 text-[11px] font-semibold tracking-[0.06em] text-[#4c5f2a] uppercase">
-                              Disponivel
+                              Disponível
                             </span>
                           )}
                         </div>
@@ -320,7 +320,7 @@ export default function ConvidadoPage() {
                             disabled
                             className="w-full cursor-not-allowed rounded-lg border border-[#d5dbc6] bg-[#f0f4e8] py-2.5 text-sm font-semibold text-[#8a917e]"
                           >
-                            Ja reservado
+                            Já reservado
                           </button>
                         ) : isReserved && isMine ? (
                           <div className="space-y-3">
@@ -372,7 +372,7 @@ export default function ConvidadoPage() {
                                   </div>
                                 ) : (
                                   <p className="mt-3 text-xs text-[#8a917e]">
-                                    Dados de PIX indisponiveis no momento. Fale com os noivos.
+                                    Dados de PIX indisponíveis no momento. Fale com os noivos.
                                   </p>
                                 )}
                                 {gift.pixReceiptConfirmedAt ? (
@@ -384,7 +384,7 @@ export default function ConvidadoPage() {
                             ) : (
                               <div className="rounded-xl border border-[#d5dbc6] bg-[#f7f9f1] p-3">
                                 <p className="text-xs text-[#5f6652]">
-                                  Forma de presente ainda nao informada.
+                                  Forma de presente ainda não informada.
                                 </p>
                               </div>
                             )}
@@ -425,7 +425,7 @@ export default function ConvidadoPage() {
                                 </div>
                                 {!hasPixConfiguration ? (
                                   <p className="mt-3 text-xs text-[#8a917e]">
-                                    PIX ainda nao foi configurado pelos noivos.
+                                    PIX ainda não foi configurado pelos noivos.
                                   </p>
                                 ) : null}
                               </div>
@@ -444,7 +444,7 @@ export default function ConvidadoPage() {
                               {isLoading
                                 ? "Reservando..."
                                 : isChoosingOption
-                                  ? "Fechar opcoes"
+                                  ? "Fechar opções"
                                   : "Selecionar presente"}
                             </button>
                           </div>
@@ -461,7 +461,7 @@ export default function ConvidadoPage() {
             <div className="mx-auto grid max-w-[1220px] gap-7 lg:grid-cols-[1.05fr_1fr]">
               <div className="surface rounded-2xl p-7">
                 <p className="text-xs tracking-[0.22em] text-[var(--color-gold)] uppercase">
-                  Local da cerimonia
+                  Local da cerimônia
                 </p>
                 <h2 className="mt-3 text-4xl font-semibold">Nosso cantinho</h2>
                 <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">

@@ -105,7 +105,7 @@ export default function AdminConfiguracoesPage() {
       !formState.whatsappNumber.trim() ||
       !eventDate
     ) {
-      setError("Preencha todos os campos obrigatorios.");
+      setError("Preencha todos os campos obrigatórios.");
       return;
     }
 
@@ -124,10 +124,10 @@ export default function AdminConfiguracoesPage() {
         imageFile: formState.imageFile,
       });
       setFormState((prev) => ({ ...prev, imageFile: null }));
-      setSuccess("Configuracoes salvas com sucesso.");
+      setSuccess("Configurações salvas com sucesso.");
     } catch (nextError) {
       console.error(nextError);
-      setError("Nao foi possivel salvar as configuracoes.");
+      setError("Não foi possível salvar as configurações.");
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +139,7 @@ export default function AdminConfiguracoesPage() {
         <section className="grid grid-cols-1">
           <article className="surface overflow-hidden rounded-2xl">
             <div className="border-b border-[#dde4cf] px-6 py-4">
-              <h2 className="text-2xl font-semibold">Configuracoes do evento</h2>
+              <h2 className="text-2xl font-semibold">Configurações do evento</h2>
             </div>
 
             <form className="grid grid-cols-1 gap-5 px-6 py-6 md:grid-cols-2" onSubmit={handleSubmit}>
@@ -161,7 +161,7 @@ export default function AdminConfiguracoesPage() {
 
               <label className="block space-y-2">
                 <span className="text-xs tracking-[0.12em] font-semibold text-[#667235] uppercase">
-                  Data da celebracao
+                  Data da celebração
                 </span>
                 <input
                   type="date"
@@ -176,7 +176,7 @@ export default function AdminConfiguracoesPage() {
 
               <label className="block space-y-2 md:col-span-2">
                 <span className="text-xs tracking-[0.12em] font-semibold text-[#667235] uppercase">
-                  Historia do casal
+                  História do casal
                 </span>
                 <textarea
                   rows={4}
@@ -185,14 +185,14 @@ export default function AdminConfiguracoesPage() {
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, story: event.target.value }))
                   }
-                  placeholder="Escreva um resumo curto da historia do casal."
+                  placeholder="Escreva um resumo curto da história do casal."
                   className="w-full resize-none rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0 placeholder:text-[#9ca592]"
                 />
               </label>
 
               <label className="block space-y-2">
                 <span className="text-xs tracking-[0.12em] font-semibold text-[#667235] uppercase">
-                  Local da celebracao
+                  Local da celebração
                 </span>
                 <input
                   type="text"
@@ -201,7 +201,7 @@ export default function AdminConfiguracoesPage() {
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, venue: event.target.value }))
                   }
-                  placeholder="Ex: Espaco Jardim Imperial, Sao Paulo"
+                  placeholder="Ex.: Espaço Jardim Imperial, São Paulo"
                   className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0 placeholder:text-[#9ca592]"
                 />
               </label>
@@ -283,7 +283,7 @@ export default function AdminConfiguracoesPage() {
                   disabled={submitting}
                   className="gold-button py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {submitting ? "Salvando..." : "Salvar Configuracoes"}
+                  {submitting ? "Salvando..." : "Salvar Configurações"}
                 </button>
                 <button
                   type="button"

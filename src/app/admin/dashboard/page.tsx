@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
   const metricCards = useMemo(
     () => [
       { label: "Total de Presentes", value: totalPresentes },
-      { label: "Disponiveis", value: disponiveis },
+      { label: "Disponíveis", value: disponiveis },
       { label: "Reservados", value: reservados },
     ],
     [disponiveis, reservados, totalPresentes],
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
 
           <article id="reservas" className="surface overflow-hidden rounded-2xl">
             <div className="border-b border-[#dde4cf] px-6 py-4">
-              <h2 className="text-2xl font-semibold">Ultimas reservas</h2>
+              <h2 className="text-2xl font-semibold">Últimas reservas</h2>
             </div>
 
             <div className="overflow-x-auto">
