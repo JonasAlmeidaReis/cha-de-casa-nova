@@ -52,13 +52,13 @@ export type EventSettings = {
 };
 
 export const DEFAULT_EVENT_SETTINGS: EventSettings = {
-  coupleName: "Natália & Jonas",
+  coupleName: "Fulana & Fulano",
   eventDate: new Date("2026-05-02T12:00:00.000Z"),
   story:
-    "Nos conhecemos em uma festa de empresa e, desde então, nunca mais nos separamos. Depois de muitos momentos especiais, decidimos dar o próximo passo e iniciar a nossa vida a dois. Estamos ansiosos para celebrar este dia especial com vocês.",
-  venue: "Av. Maestro Villa-Lobos, 836 - Vila Gustavo, São Paulo - SP, 02266-001",
-  pixKey: "11975805283",
-  whatsappNumber: "+5511975805283",
+    "Nos conhecemos em uma festa e, desde então, nunca mais nos separamos. Depois de muitos momentos especiais, decidimos dar o próximo passo e iniciar a nossa vida a dois. Estamos ansiosos para celebrar este dia especial com vocês.",
+  venue: "Avenida Teste, 123 - Vila da Imaginação, São Paulo - SP",
+  pixKey: "11123456789",
+  whatsappNumber: "+5511123456789",
   coupleImageUrl: "",
   coupleImagePath: "",
   updatedAt: null,
