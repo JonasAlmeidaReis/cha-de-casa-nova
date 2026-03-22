@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Lista de Presentes | Ana & Lucas",
+    default: "Lista de Presentes | Natália & Jonas",
     template: "%s | Lista de Presentes",
   },
   description:
