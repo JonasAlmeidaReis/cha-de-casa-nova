@@ -285,7 +285,7 @@ export default function ConvidadoPage() {
                   return (
                     <article
                       key={gift.id}
-                      className="surface reveal overflow-hidden rounded-2xl"
+                      className="surface reveal flex h-full flex-col overflow-hidden rounded-2xl"
                       style={{ animationDelay: `${index * 80}ms` }}
                     >
                       {gift.imageUrl ? (
@@ -296,15 +296,20 @@ export default function ConvidadoPage() {
                       ) : (
                         <div className="aspect-[4/3] bg-[linear-gradient(140deg,#e3ead2,#cad5b2,#aab985)]" />
                       )}
-                      <div className="space-y-4 p-5">
+                      <div className="flex h-full flex-col space-y-4 p-5">
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-lg font-semibold text-[#2a311e]">{gift.name}</h3>
+                          <h3
+                            className="min-w-0 flex-1 truncate text-lg font-semibold text-[#2a311e]"
+                            title={gift.name}
+                          >
+                            {gift.name}
+                          </h3>
                           {isReserved ? (
-                            <span className="rounded-full bg-[#e1e7d4] px-3 py-1 text-[11px] font-semibold tracking-[0.06em] text-[#6f775f] uppercase">
+                            <span className="shrink-0 rounded-full bg-[#e1e7d4] px-3 py-1 text-[11px] font-semibold tracking-[0.06em] text-[#6f775f] uppercase">
                               Reservado
                             </span>
                           ) : (
-                            <span className="rounded-full bg-[#e5ecd3] px-3 py-1 text-[11px] font-semibold tracking-[0.06em] text-[#4c5f2a] uppercase">
+                            <span className="shrink-0 rounded-full bg-[#e5ecd3] px-3 py-1 text-[11px] font-semibold tracking-[0.06em] text-[#4c5f2a] uppercase">
                               Disponível
                             </span>
                           )}
@@ -314,16 +319,17 @@ export default function ConvidadoPage() {
                           {formatCurrencyBRLFromCents(gift.priceCents)}
                         </p>
 
-                        {isReserved && !isMine ? (
-                          <button
-                            type="button"
-                            disabled
-                            className="w-full cursor-not-allowed rounded-lg border border-[#d5dbc6] bg-[#f0f4e8] py-2.5 text-sm font-semibold text-[#8a917e]"
-                          >
+                        <div className="mt-auto">
+                          {isReserved && !isMine ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="w-full cursor-not-allowed rounded-lg border border-[#d5dbc6] bg-[#f0f4e8] py-2.5 text-sm font-semibold text-[#8a917e]"
+                            >
                             Já reservado
-                          </button>
-                        ) : isReserved && isMine ? (
-                          <div className="space-y-3">
+                            </button>
+                          ) : isReserved && isMine ? (
+                            <div className="space-y-3">
                             {isMarketplaceReservation ? (
                               <div className="rounded-xl border border-[#d5dbc6] bg-[#f7f9f1] p-3">
                                 <p className="text-xs font-semibold tracking-[0.07em] text-[#6f775f] uppercase">
@@ -449,6 +455,7 @@ export default function ConvidadoPage() {
                             </button>
                           </div>
                         )}
+                        </div>
                       </div>
                     </article>
                   );
