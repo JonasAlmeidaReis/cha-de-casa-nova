@@ -10,7 +10,7 @@ O projeto tem duas áreas:
 
 - Login e cadastro com Firebase Authentication.
 - Controle de perfis por papel (`guest` e `admin`).
-- Lista de presentes com imagem, valor, link e status.
+- Lista de presentes com imagem, cômodo padronizado, quantidade opcional, valor, link e status.
 - Reserva de presentes com validação transacional (evita dupla reserva).
 - Fluxo de reserva via marketplace ou via PIX.
 - Confirmação de recebimento de PIX no painel admin.

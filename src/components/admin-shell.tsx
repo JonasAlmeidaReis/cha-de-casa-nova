@@ -98,7 +98,7 @@ export function AdminShell({ active, children }: AdminShellProps) {
             {renderNavigationContent(false)}
           </nav>
         </aside>
-        <main className="w-full space-y-4">{children}</main>
+        <main className="min-w-0 w-full space-y-4">{children}</main>
       </div>
     </div>
   );

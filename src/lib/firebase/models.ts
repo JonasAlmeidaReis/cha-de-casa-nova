@@ -16,9 +16,40 @@ export type UserProfile = {
 export type ReservationStatus = "available" | "reserved";
 export type ReservationMethod = "marketplace" | "pix";
 
+export const GIFT_ROOMS = [
+  "Cozinha",
+  "Quarto",
+  "Banheiro",
+  "Lavanderia",
+  "Varanda",
+  "Sala",
+] as const;
+
+export type GiftRoom = (typeof GIFT_ROOMS)[number];
+
+export function isGiftRoom(value: string): value is GiftRoom {
+  return GIFT_ROOMS.includes(value as GiftRoom);
+}
+
+export type GiftQuantityReservation = {
+  uid: string;
+  reservedByName: string;
+  reservedByEmail: string;
+  quantity: number;
+  reservationMethod: ReservationMethod | null;
+  pixReceiptConfirmedAt: Date | null;
+  pixReceiptConfirmedBy: string | null;
+  reservedAt: Date | null;
+};
+
 export type Gift = {
   id: string;
   name: string;
+  room: GiftRoom | "";
+  allowsQuantity: boolean;
+  requestedQuantity: number;
+  reservedQuantity: number;
+  quantityReservations: GiftQuantityReservation[];
   priceCents: number;
   productUrl: string;
   imageUrl: string;

@@ -13,11 +13,40 @@ import {
   subscribeGifts,
   subscribeMyReservedGifts,
 } from "@/lib/firebase/gifts";
-import type { Gift, ReservationMethod } from "@/lib/firebase/models";
+import {
+  GIFT_ROOMS,
+  type Gift,
+  type GiftQuantityReservation,
+  type GiftRoom,
+  type ReservationMethod,
+} from "@/lib/firebase/models";
 import { formatCurrencyBRLFromCents, formatEventDate } from "@/lib/formatters";
+
+type RoomFilter = GiftRoom | "all";
 
 function toWhatsAppDigits(value: string): string {
   return value.replace(/\D/g, "");
+}
+
+function getAvailableQuantity(gift: Gift): number {
+  if (!gift.allowsQuantity) {
+    return gift.reservationStatus === "available" ? 1 : 0;
+  }
+
+  return Math.max(0, gift.requestedQuantity - gift.reservedQuantity);
+}
+
+function getMyQuantityReservation(
+  gift: Gift,
+  uid: string | undefined,
+): GiftQuantityReservation | null {
+  if (!uid) {
+    return null;
+  }
+
+  return (
+    gift.quantityReservations.find((reservation) => reservation.uid === uid) ?? null
+  );
 }
 
 export default function ConvidadoPage() {
@@ -29,6 +58,9 @@ export default function ConvidadoPage() {
   const [myReservedGifts, setMyReservedGifts] = useState<Gift[]>([]);
   const [loadingGiftId, setLoadingGiftId] = useState<string | null>(null);
   const [selectingGiftId, setSelectingGiftId] = useState<string | null>(null);
+  const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
+  const [roomFilter, setRoomFilter] = useState<RoomFilter>("all");
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -43,9 +75,24 @@ export default function ConvidadoPage() {
     return subscribeMyReservedGifts(profile.id, setMyReservedGifts);
   }, [profile]);
 
-  const activeGifts = useMemo(
-    () => gifts.filter((gift) => gift.isActive),
-    [gifts],
+  const filteredGifts = useMemo(
+    () =>
+      gifts.filter((gift) => {
+        if (!gift.isActive) {
+          return false;
+        }
+
+        if (roomFilter !== "all" && gift.room !== roomFilter) {
+          return false;
+        }
+
+        if (showAvailableOnly && gift.reservationStatus !== "available") {
+          return false;
+        }
+
+        return true;
+      }),
+    [gifts, roomFilter, showAvailableOnly],
   );
   const pixKey = settings.pixKey.trim();
   const whatsappDigits = useMemo(
@@ -59,6 +106,21 @@ export default function ConvidadoPage() {
       return;
     }
 
+    const availableQuantity = getAvailableQuantity(gift);
+    const selectedQuantity = gift.allowsQuantity
+      ? Number.parseInt(quantityInputs[gift.id] ?? "1", 10)
+      : 1;
+
+    if (
+      !Number.isInteger(selectedQuantity) ||
+      selectedQuantity < 1 ||
+      selectedQuantity > availableQuantity
+    ) {
+      setError("Informe uma quantidade válida para este presente.");
+      setNotice("");
+      return;
+    }
+
     try {
       setError("");
       setNotice("");
@@ -69,8 +131,10 @@ export default function ConvidadoPage() {
         actorName: profile.displayName || authUser.displayName || "Convidado",
         actorEmail: profile.email || authUser.email || "",
         reservationMethod,
+        quantity: selectedQuantity,
       });
       setSelectingGiftId(null);
+      setQuantityInputs((current) => ({ ...current, [gift.id]: "1" }));
       setNotice(
         reservationMethod === "pix"
           ? "Presente reservado com pagamento via PIX."
@@ -264,17 +328,69 @@ export default function ConvidadoPage() {
                 </p>
               </div>
 
+              <div className="mt-8 flex flex-col gap-4 border-y border-[#d2d8c1] py-4 md:flex-row md:items-end md:justify-between">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(220px,280px)_auto] sm:items-end">
+                  <label className="block space-y-2">
+                    <span className="text-xs font-semibold tracking-[0.12em] text-[#667235] uppercase">
+                      Cômodo
+                    </span>
+                    <select
+                      value={roomFilter}
+                      onChange={(event) =>
+                        setRoomFilter(event.target.value as RoomFilter)
+                      }
+                      className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[#3d452f] outline-none ring-0"
+                    >
+                      <option value="all">Todos os cômodos</option>
+                      {GIFT_ROOMS.map((room) => (
+                        <option key={room} value={room}>
+                          {room}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="inline-flex min-h-11 items-center gap-3 text-sm font-semibold text-[#5f6652]">
+                    <input
+                      type="checkbox"
+                      checked={showAvailableOnly}
+                      onChange={(event) => setShowAvailableOnly(event.target.checked)}
+                      className="size-4 rounded border-[#c5ccb8]"
+                    />
+                    Somente disponíveis
+                  </label>
+                </div>
+
+                <p className="text-sm text-[#666d59]">
+                  {filteredGifts.length} presente(s) encontrado(s)
+                </p>
+              </div>
+
               {error ? <p className="mt-4 text-sm text-[#9b3e3e]">{error}</p> : null}
               {notice ? <p className="mt-4 text-sm text-[#486227]">{notice}</p> : null}
 
               <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                {activeGifts.map((gift, index) => {
+                {filteredGifts.length === 0 ? (
+                  <div className="border-y border-[#d2d8c1] py-10 text-center text-sm font-medium text-[#676f5c] md:col-span-2 xl:col-span-3">
+                    Nenhum presente encontrado para esses filtros.
+                  </div>
+                ) : (
+                  filteredGifts.map((gift, index) => {
                   const isReserved = gift.reservationStatus === "reserved";
-                  const isMine = gift.reservedByUid === profile?.id;
+                  const myQuantityReservation = getMyQuantityReservation(
+                    gift,
+                    profile?.id,
+                  );
+                  const isMine =
+                    gift.reservedByUid === profile?.id || Boolean(myQuantityReservation);
                   const isLoading = loadingGiftId === gift.id;
                   const isChoosingOption = selectingGiftId === gift.id;
-                  const isPixReservation = gift.reservationMethod === "pix";
-                  const isMarketplaceReservation = gift.reservationMethod === "marketplace";
+                  const reservationMethod =
+                    myQuantityReservation?.reservationMethod ?? gift.reservationMethod;
+                  const isPixReservation = reservationMethod === "pix";
+                  const isMarketplaceReservation = reservationMethod === "marketplace";
+                  const availableQuantity = getAvailableQuantity(gift);
+                  const quantityInputValue = quantityInputs[gift.id] ?? "1";
                   const whatsappMessage = encodeURIComponent(
                     `Oi! Reservei o presente "${gift.name}" e estou enviando o comprovante do PIX.`,
                   );
@@ -319,6 +435,18 @@ export default function ConvidadoPage() {
                           {formatCurrencyBRLFromCents(gift.priceCents)}
                         </p>
 
+                        {gift.room ? (
+                          <p className="text-xs font-semibold tracking-[0.08em] text-[#778069] uppercase">
+                            {gift.room}
+                          </p>
+                        ) : null}
+
+                        {gift.allowsQuantity ? (
+                          <p className="text-sm text-[#5f6652]">
+                            {availableQuantity} de {gift.requestedQuantity} unidade(s) disponíveis
+                          </p>
+                        ) : null}
+
                         <div className="mt-auto">
                           {isReserved && !isMine ? (
                             <button
@@ -328,8 +456,13 @@ export default function ConvidadoPage() {
                             >
                             Já reservado
                             </button>
-                          ) : isReserved && isMine ? (
+                          ) : isMine ? (
                             <div className="space-y-3">
+                            {myQuantityReservation ? (
+                              <p className="rounded-xl border border-[#d5dbc6] bg-[#f7f9f1] p-3 text-xs font-semibold text-[#5f6652]">
+                                Você reservou {myQuantityReservation.quantity} unidade(s).
+                              </p>
+                            ) : null}
                             {isMarketplaceReservation ? (
                               <div className="rounded-xl border border-[#d5dbc6] bg-[#f7f9f1] p-3">
                                 <p className="text-xs font-semibold tracking-[0.07em] text-[#6f775f] uppercase">
@@ -352,6 +485,14 @@ export default function ConvidadoPage() {
                                 <p className="text-xs font-semibold tracking-[0.07em] text-[#6f775f] uppercase">
                                   Forma escolhida: PIX
                                 </p>
+                                <a
+                                  href={gift.productUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="gold-button mt-3 block w-full px-3 py-2.5 text-center text-sm leading-snug"
+                                >
+                                  Consulte o valor atual desse presente nesse site
+                                </a>
                                 {hasPixConfiguration ? (
                                   <div className="mt-3 space-y-2 rounded-lg border border-[#d5dbc6] bg-white p-3">
                                     <div>
@@ -381,7 +522,8 @@ export default function ConvidadoPage() {
                                     Dados de PIX indisponíveis no momento. Fale com os noivos.
                                   </p>
                                 )}
-                                {gift.pixReceiptConfirmedAt ? (
+                                {(myQuantityReservation?.pixReceiptConfirmedAt ??
+                                  gift.pixReceiptConfirmedAt) ? (
                                   <p className="mt-3 text-xs font-semibold text-[#4c5f2a]">
                                     PIX confirmado pelos noivos.
                                   </p>
@@ -411,6 +553,30 @@ export default function ConvidadoPage() {
                                 <p className="text-xs font-semibold tracking-[0.07em] text-[#6f775f] uppercase">
                                   Escolha a forma do presente
                                 </p>
+                                {gift.allowsQuantity ? (
+                                  <label className="mt-3 block space-y-2">
+                                    <span className="text-xs font-semibold text-[#5f6652]">
+                                      Quantidade
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={availableQuantity}
+                                      step={1}
+                                      value={quantityInputValue}
+                                      onChange={(event) =>
+                                        setQuantityInputs((current) => ({
+                                          ...current,
+                                          [gift.id]: event.target.value,
+                                        }))
+                                      }
+                                      className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0"
+                                    />
+                                    <span className="block text-xs text-[#8a917e]">
+                                      Máximo disponível: {availableQuantity}.
+                                    </span>
+                                  </label>
+                                ) : null}
                                 <div className="mt-3 space-y-2">
                                   <button
                                     type="button"
@@ -459,7 +625,8 @@ export default function ConvidadoPage() {
                       </div>
                     </article>
                   );
-                })}
+                })
+                )}
               </div>
             </div>
           </section>

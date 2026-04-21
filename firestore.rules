@@ -37,6 +37,56 @@ service cloud.firestore {
       return value == "marketplace" || value == "pix" || value == null;
     }
 
+    function validGiftRoom(value) {
+      return value == "Cozinha" ||
+        value == "Quarto" ||
+        value == "Banheiro" ||
+        value == "Lavanderia" ||
+        value == "Varanda" ||
+        value == "Sala";
+    }
+
+    function validGiftQuantityData(data) {
+      let legacyFlow = !data.keys().hasAny([
+        "allowsQuantity",
+        "requestedQuantity",
+        "reservedQuantity",
+        "quantityReservations"
+      ]);
+      let hasQuantityFields = data.keys().hasAll([
+        "allowsQuantity",
+        "requestedQuantity",
+        "reservedQuantity",
+        "quantityReservations"
+      ]);
+      let baseFlow = hasQuantityFields &&
+        data.allowsQuantity is bool &&
+        data.requestedQuantity is int &&
+        data.requestedQuantity > 0 &&
+        data.reservedQuantity is int &&
+        data.reservedQuantity >= 0 &&
+        data.reservedQuantity <= data.requestedQuantity &&
+        data.quantityReservations is map;
+      let disabledFlow = baseFlow &&
+        data.allowsQuantity == false &&
+        data.requestedQuantity == 1 &&
+        (
+          (data.reservationStatus == "available" && data.reservedQuantity == 0) ||
+          (data.reservationStatus == "reserved" && data.reservedQuantity == 1)
+        );
+      let enabledFlow = baseFlow &&
+        data.allowsQuantity == true &&
+        data.reservedByUid == null &&
+        data.reservedByName == null &&
+        data.reservedByEmail == null &&
+        data.reservationMethod == null &&
+        data.pixReceiptConfirmedAt == null &&
+        data.pixReceiptConfirmedBy == null &&
+        data.reservedAt == null;
+
+      return legacyFlow || disabledFlow || enabledFlow;
+    }
+
     function validGiftKeys(data) {
       return data.keys().hasAll([
         "name",
@@ -60,6 +110,11 @@ service cloud.firestore {
       ]) &&
       data.keys().hasOnly([
         "name",
+        "room",
+        "allowsQuantity",
+        "requestedQuantity",
+        "reservedQuantity",
+        "quantityReservations",
         "priceCents",
         "productUrl",
         "imageUrl",
@@ -81,6 +136,32 @@ service cloud.firestore {
     }
 
     function validGiftReservationState(data) {
+      let quantityFlow = (
+        data.keys().hasAll([
+          "allowsQuantity",
+          "requestedQuantity",
+          "reservedQuantity",
+          "quantityReservations"
+        ]) &&
+        data.allowsQuantity == true &&
+        data.reservedByUid == null &&
+        data.reservedByName == null &&
+        data.reservedByEmail == null &&
+        data.reservationMethod == null &&
+        data.pixReceiptConfirmedAt == null &&
+        data.pixReceiptConfirmedBy == null &&
+        data.reservedAt == null &&
+        (
+          (
+            data.reservationStatus == "available" &&
+            data.reservedQuantity < data.requestedQuantity
+          ) ||
+          (
+            data.reservationStatus == "reserved" &&
+            data.reservedQuantity == data.requestedQuantity
+          )
+        )
+      );
       let availableFlow = (
         data.reservationStatus == "available" &&
         data.reservedByUid == null &&
@@ -132,7 +213,8 @@ service cloud.firestore {
         data.reservedAt is timestamp
       );
 
-      return availableFlow ||
+      return quantityFlow ||
+        availableFlow ||
         reservedMarketplaceFlow ||
         reservedPixPendingFlow ||
         reservedPixConfirmedFlow ||
@@ -142,6 +224,7 @@ service cloud.firestore {
     function validGiftData(data) {
       return validGiftKeys(data) &&
         nonEmptyString(data.name) &&
+        (!data.keys().hasAny(["room"]) || validGiftRoom(data.room)) &&
         data.priceCents is int &&
         data.priceCents > 0 &&
         nonEmptyString(data.productUrl) &&
@@ -150,6 +233,7 @@ service cloud.firestore {
         data.isActive is bool &&
         validReservationStatus(data.reservationStatus) &&
         validReservationMethod(data.reservationMethod) &&
+        validGiftQuantityData(data) &&
         validGiftReservationState(data) &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp &&
@@ -184,6 +268,60 @@ service cloud.firestore {
         request.resource.data.reservedAt == null &&
         request.resource.data.updatedAt == request.time &&
         request.resource.data.updatedBy == request.auth.uid;
+      let quantityReservation =
+        request.resource.data.get("quantityReservations", {})[request.auth.uid];
+      let existingQuantityReservation =
+        resource.data.get("quantityReservations", {})[request.auth.uid];
+      let quantityReserveFlow = resource.data.keys().hasAll([
+          "allowsQuantity",
+          "requestedQuantity",
+          "reservedQuantity",
+          "quantityReservations"
+        ]) &&
+        resource.data.allowsQuantity == true &&
+        resource.data.reservationStatus == "available" &&
+        existingQuantityReservation == null &&
+        quantityReservation != null &&
+        quantityReservation.quantity is int &&
+        quantityReservation.quantity > 0 &&
+        nonEmptyString(quantityReservation.reservedByName) &&
+        nonEmptyString(quantityReservation.reservedByEmail) &&
+        (quantityReservation.reservationMethod == "marketplace" ||
+          quantityReservation.reservationMethod == "pix") &&
+        quantityReservation.pixReceiptConfirmedAt == null &&
+        quantityReservation.pixReceiptConfirmedBy == null &&
+        quantityReservation.reservedAt == request.time &&
+        request.resource.data.reservedQuantity ==
+          resource.data.reservedQuantity + quantityReservation.quantity &&
+        request.resource.data.reservedQuantity <= resource.data.requestedQuantity &&
+        (
+          (
+            request.resource.data.reservedQuantity == resource.data.requestedQuantity &&
+            request.resource.data.reservationStatus == "reserved"
+          ) ||
+          (
+            request.resource.data.reservedQuantity < resource.data.requestedQuantity &&
+            request.resource.data.reservationStatus == "available"
+          )
+        ) &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.updatedBy == request.auth.uid;
+      let quantityCancelFlow = resource.data.keys().hasAll([
+          "allowsQuantity",
+          "requestedQuantity",
+          "reservedQuantity",
+          "quantityReservations"
+        ]) &&
+        resource.data.allowsQuantity == true &&
+        existingQuantityReservation != null &&
+        existingQuantityReservation.quantity is int &&
+        existingQuantityReservation.quantity > 0 &&
+        quantityReservation == null &&
+        request.resource.data.reservedQuantity ==
+          resource.data.reservedQuantity - existingQuantityReservation.quantity &&
+        request.resource.data.reservationStatus == "available" &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.updatedBy == request.auth.uid;
 
       return isGuest() &&
         changedKeys.hasOnly([
@@ -192,6 +330,10 @@ service cloud.firestore {
           "reservedByName",
           "reservedByEmail",
           "reservationMethod",
+          "allowsQuantity",
+          "requestedQuantity",
+          "reservedQuantity",
+          "quantityReservations",
           "pixReceiptConfirmedAt",
           "pixReceiptConfirmedBy",
           "reservedAt",
@@ -201,7 +343,7 @@ service cloud.firestore {
         validGiftData(request.resource.data) &&
         request.resource.data.createdAt == resource.data.createdAt &&
         request.resource.data.createdBy == resource.data.createdBy &&
-        (reserveFlow || cancelFlow);
+        (reserveFlow || cancelFlow || quantityReserveFlow || quantityCancelFlow);
     }
 
     match /users/{uid} {
@@ -280,6 +422,13 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isAdmin() &&
         validGiftData(request.resource.data) &&
+        request.resource.data.keys().hasAll([
+          "room",
+          "allowsQuantity",
+          "requestedQuantity",
+          "reservedQuantity",
+          "quantityReservations"
+        ]) &&
         request.resource.data.reservationStatus == "available" &&
         request.resource.data.createdAt == request.time &&
         request.resource.data.updatedAt == request.time &&
@@ -292,7 +441,12 @@ service cloud.firestore {
           request.resource.data.updatedAt == request.time &&
           request.resource.data.updatedBy == request.auth.uid) ||
         isGuestReservationUpdate();
-      allow delete: if isAdmin() && resource.data.reservationStatus == "available";
+      allow delete: if isAdmin() &&
+        resource.data.reservationStatus == "available" &&
+        (
+          !resource.data.keys().hasAny(["reservedQuantity"]) ||
+          resource.data.reservedQuantity == 0
+        );
     }
   }
 }

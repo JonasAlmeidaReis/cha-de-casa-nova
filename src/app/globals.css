@@ -9,6 +9,10 @@
   --color-gold-soft: #d7dfbf;
   --color-border: #d7ddc9;
   --color-navy: #1f2a1a;
+  --scrollbar-size: 12px;
+  --scrollbar-track: #e5ebd8;
+  --scrollbar-thumb: #95a160;
+  --scrollbar-thumb-hover: #77833e;
   --shadow-card: 0 16px 34px rgb(28 35 20 / 8%);
 }
 
@@ -21,6 +25,32 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+body::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+body::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--scrollbar-track);
+}
+
+body::-webkit-scrollbar-thumb {
+  border: 3px solid var(--scrollbar-track);
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+body::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
 }
 
 body {
@@ -103,5 +133,5 @@ button {
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #95a160 #e5ebd8;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }

@@ -13,6 +13,14 @@ import {
 } from "@/lib/firebase/gifts";
 import type { Gift } from "@/lib/firebase/models";
 
+type DashboardReservation = {
+  id: string;
+  gift: Gift;
+  reservedByName: string | null;
+  quantity: number;
+  reservedAt: Date | null;
+};
+
 function formatReservationDate(value: Date | null): string {
   if (!value) {
     return "--";
@@ -28,11 +36,39 @@ function formatReservationDate(value: Date | null): string {
   }).format(value);
 }
 
+function getDashboardReservations(gifts: Gift[]): DashboardReservation[] {
+  return gifts.flatMap((gift) => {
+    if (gift.allowsQuantity) {
+      return gift.quantityReservations.map((reservation) => ({
+        id: `${gift.id}-${reservation.uid}`,
+        gift,
+        reservedByName: reservation.reservedByName,
+        quantity: reservation.quantity,
+        reservedAt: reservation.reservedAt,
+      }));
+    }
+
+    if (gift.reservationStatus !== "reserved") {
+      return [];
+    }
+
+    return [
+      {
+        id: gift.id,
+        gift,
+        reservedByName: gift.reservedByName,
+        quantity: 1,
+        reservedAt: gift.reservedAt,
+      },
+    ];
+  });
+}
+
 export default function AdminDashboardPage() {
   const [totalPresentes, setTotalPresentes] = useState(0);
   const [disponiveis, setDisponiveis] = useState(0);
   const [reservados, setReservados] = useState(0);
-  const [ultimasReservas, setUltimasReservas] = useState<Gift[]>([]);
+  const [ultimasReservas, setUltimasReservas] = useState<DashboardReservation[]>([]);
 
   const metricCards = useMemo(
     () => [
@@ -67,7 +103,7 @@ export default function AdminDashboardPage() {
     });
 
     const unsubscribeReserved = subscribeReservedGifts((gifts) => {
-      setUltimasReservas(gifts.slice(0, 4));
+      setUltimasReservas(getDashboardReservations(gifts).slice(0, 4));
     }, 4);
 
     return () => {
@@ -146,8 +182,18 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-[#616955]">
                           <span className="block max-w-[100px] truncate">
-                            {reserva.name}
+                            {reserva.gift.name}
                           </span>
+                          {reserva.gift.room ? (
+                            <span className="mt-1 block max-w-[100px] truncate text-xs text-[#778069]">
+                              {reserva.gift.room}
+                            </span>
+                          ) : null}
+                          {reserva.gift.allowsQuantity ? (
+                            <span className="mt-1 block max-w-[100px] truncate text-xs text-[#778069]">
+                              Qtd: {reserva.quantity}
+                            </span>
+                          ) : null}
                         </td>
                         <td className="px-6 py-4 text-sm text-[#676f5c]">
                           {formatReservationDate(reserva.reservedAt)}

@@ -8,7 +8,7 @@ export default function AdminReservasPage() {
   return (
     <RequireAuth allowedRoles={["admin"]}>
       <AdminShell active="reservas">
-        <section className="grid grid-cols-1">
+        <section className="grid min-w-0 grid-cols-1">
           <AdminReservasTable />
         </section>
       </AdminShell>

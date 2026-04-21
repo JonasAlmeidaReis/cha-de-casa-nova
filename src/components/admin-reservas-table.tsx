@@ -13,6 +13,17 @@ import { formatCurrencyBRLFromCents } from "@/lib/formatters";
 
 type ReservaStatus = "Marketplace" | "PIX" | "Não informado";
 
+type ReservationRow = {
+  id: string;
+  gift: Gift;
+  reservationUid: string | null;
+  reservedByName: string | null;
+  quantity: number;
+  reservationMethod: Gift["reservationMethod"];
+  pixReceiptConfirmedAt: Date | null;
+  reservedAt: Date | null;
+};
+
 const statusStyles: Record<ReservaStatus, string> = {
   Marketplace: "bg-[#e5ecd3] text-[#4c5f2a]",
   PIX: "bg-[#f0ecd9] text-[#89703b]",
@@ -34,6 +45,40 @@ function formatReservationDate(value: Date | null): string {
   }).format(value);
 }
 
+function getReservationRows(gifts: Gift[]): ReservationRow[] {
+  return gifts.flatMap<ReservationRow>((gift) => {
+    if (gift.allowsQuantity) {
+      return gift.quantityReservations.map((reservation) => ({
+        id: `${gift.id}-${reservation.uid}`,
+        gift,
+        reservationUid: reservation.uid,
+        reservedByName: reservation.reservedByName,
+        quantity: reservation.quantity,
+        reservationMethod: reservation.reservationMethod,
+        pixReceiptConfirmedAt: reservation.pixReceiptConfirmedAt,
+        reservedAt: reservation.reservedAt,
+      }));
+    }
+
+    if (gift.reservationStatus !== "reserved") {
+      return [];
+    }
+
+    return [
+      {
+        id: gift.id,
+        gift,
+        reservationUid: null,
+        reservedByName: gift.reservedByName,
+        quantity: 1,
+        reservationMethod: gift.reservationMethod,
+        pixReceiptConfirmedAt: gift.pixReceiptConfirmedAt,
+        reservedAt: gift.reservedAt,
+      },
+    ];
+  });
+}
+
 export function AdminReservasTable() {
   const { profile } = useAuthSession();
   const [reservas, setReservas] = useState<Gift[]>([]);
@@ -45,21 +90,24 @@ export function AdminReservasTable() {
 
   useEffect(() => subscribeReservedGifts(setReservas, 200), []);
 
+  const reservationRows = useMemo(() => getReservationRows(reservas), [reservas]);
+
   const filteredReservas = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     if (!query) {
-      return reservas;
+      return reservationRows;
     }
 
-    return reservas.filter((reserva) => {
+    return reservationRows.filter((reserva) => {
       const convidado = (reserva.reservedByName ?? "").toLowerCase();
-      const presente = reserva.name.toLowerCase();
-      return convidado.includes(query) || presente.includes(query);
+      const presente = reserva.gift.name.toLowerCase();
+      const room = reserva.gift.room.toLowerCase();
+      return convidado.includes(query) || presente.includes(query) || room.includes(query);
     });
-  }, [reservas, search]);
+  }, [reservationRows, search]);
 
-  const handleCancelReservation = async (giftId: string) => {
+  const handleCancelReservation = async (giftId: string, reservationUid: string | null) => {
     if (!profile) {
       return;
     }
@@ -67,9 +115,10 @@ export function AdminReservasTable() {
     try {
       setError("");
       setNotice("");
-      setLoadingCancelId(giftId);
+      setLoadingCancelId(reservationUid ? `${giftId}-${reservationUid}` : giftId);
       await cancelGiftReservation({
         giftId,
+        reservationUid: reservationUid ?? undefined,
         actorUid: profile.id,
         actorRole: profile.role,
       });
@@ -81,7 +130,7 @@ export function AdminReservasTable() {
     }
   };
 
-  const handleConfirmPix = async (giftId: string) => {
+  const handleConfirmPix = async (giftId: string, reservationUid: string | null) => {
     if (!profile) {
       return;
     }
@@ -89,9 +138,10 @@ export function AdminReservasTable() {
     try {
       setError("");
       setNotice("");
-      setLoadingConfirmPixId(giftId);
+      setLoadingConfirmPixId(reservationUid ? `${giftId}-${reservationUid}` : giftId);
       await confirmPixReceipt({
         giftId,
+        reservationUid: reservationUid ?? undefined,
         actorUid: profile.id,
         actorRole: profile.role,
       });
@@ -105,7 +155,7 @@ export function AdminReservasTable() {
   };
 
   return (
-    <article className="surface overflow-hidden rounded-2xl">
+    <article className="surface min-w-0 overflow-hidden rounded-2xl">
       <div className="border-b border-[#dde4cf] px-6 py-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -121,7 +171,7 @@ export function AdminReservasTable() {
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por convidado ou presente"
+              placeholder="Buscar por convidado, presente ou cômodo"
               className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0 placeholder:text-[#9ca592]"
             />
           </label>
@@ -130,7 +180,7 @@ export function AdminReservasTable() {
         {notice ? <p className="mt-3 text-sm text-[#486227]">{notice}</p> : null}
       </div>
 
-      <div className="h-full max-h-[520px] overflow-x-auto overflow-y-auto">
+      <div className="h-full max-h-[449px] overflow-x-auto overflow-y-auto">
         <table className="w-full min-w-[960px] border-collapse">
           <thead>
             <tr className="text-left text-xs tracking-[0.12em] text-[#838a79] uppercase">
@@ -156,6 +206,7 @@ export function AdminReservasTable() {
             ) : (
               filteredReservas.map((reserva) => {
                 const isPix = reserva.reservationMethod === "pix";
+                const actionId = reserva.id;
                 const methodLabel: ReservaStatus =
                   reserva.reservationMethod === "pix"
                     ? "PIX"
@@ -174,12 +225,22 @@ export function AdminReservasTable() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-[#616955]">
-                      <span className="block max-w-[220px] truncate" title={reserva.name}>
-                        {reserva.name}
+                      <span className="block max-w-[220px] truncate" title={reserva.gift.name}>
+                        {reserva.gift.name}
                       </span>
+                      {reserva.gift.room ? (
+                        <span className="mt-1 block max-w-[220px] truncate text-xs text-[#778069]" title={reserva.gift.room}>
+                          {reserva.gift.room}
+                        </span>
+                      ) : null}
+                      {reserva.gift.allowsQuantity ? (
+                        <span className="mt-1 block max-w-[220px] truncate text-xs text-[#778069]">
+                          Quantidade: {reserva.quantity}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4 text-sm text-[#676f5c] whitespace-nowrap">
-                      {formatCurrencyBRLFromCents(reserva.priceCents)}
+                      {formatCurrencyBRLFromCents(reserva.gift.priceCents)}
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -203,11 +264,13 @@ export function AdminReservasTable() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleConfirmPix(reserva.id)}
-                          disabled={loadingConfirmPixId === reserva.id}
+                          onClick={() =>
+                            handleConfirmPix(reserva.gift.id, reserva.reservationUid)
+                          }
+                          disabled={loadingConfirmPixId === actionId}
                           className="gold-button px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {loadingConfirmPixId === reserva.id
+                          {loadingConfirmPixId === actionId
                             ? "Confirmando..."
                             : "Confirmar PIX"}
                         </button>
@@ -216,11 +279,13 @@ export function AdminReservasTable() {
                     <td className="px-6 py-4">
                       <button
                         type="button"
-                        onClick={() => handleCancelReservation(reserva.id)}
-                        disabled={loadingCancelId === reserva.id}
+                        onClick={() =>
+                          handleCancelReservation(reserva.gift.id, reserva.reservationUid)
+                        }
+                        disabled={loadingCancelId === actionId}
                         className="ghost-button px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {loadingCancelId === reserva.id ? "Cancelando..." : "Cancelar"}
+                        {loadingCancelId === actionId ? "Cancelando..." : "Cancelar"}
                       </button>
                     </td>
                   </tr>

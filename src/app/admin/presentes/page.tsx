@@ -11,7 +11,7 @@ import {
   subscribeGifts,
   updateGift,
 } from "@/lib/firebase/gifts";
-import type { Gift } from "@/lib/firebase/models";
+import { GIFT_ROOMS, isGiftRoom, type Gift } from "@/lib/firebase/models";
 import {
   formatCurrencyBRLFromCents,
   parseCurrencyInputToCents,
@@ -19,6 +19,9 @@ import {
 
 type FormState = {
   name: string;
+  room: string;
+  allowsQuantity: boolean;
+  quantityInput: string;
   priceInput: string;
   productUrl: string;
   isActive: boolean;
@@ -27,6 +30,9 @@ type FormState = {
 
 const INITIAL_FORM: FormState = {
   name: "",
+  room: "",
+  allowsQuantity: false,
+  quantityInput: "1",
   priceInput: "",
   productUrl: "",
   isActive: true,
@@ -61,6 +67,9 @@ export default function AdminPresentesPage() {
     setEditingGiftId(gift.id);
     setFormState({
       name: gift.name,
+      room: gift.room,
+      allowsQuantity: gift.allowsQuantity,
+      quantityInput: String(gift.requestedQuantity),
       priceInput: (gift.priceCents / 100).toFixed(2).replace(".", ","),
       productUrl: gift.productUrl,
       isActive: gift.isActive,
@@ -69,7 +78,7 @@ export default function AdminPresentesPage() {
   };
 
   const handleDelete = async (gift: Gift) => {
-    if (gift.reservationStatus !== "available") {
+    if (gift.reservationStatus !== "available" || gift.reservedQuantity > 0) {
       setError("Cancele a reserva antes de excluir este presente.");
       return;
     }
@@ -101,11 +110,39 @@ export default function AdminPresentesPage() {
     setSuccess("");
 
     const name = formState.name.trim();
+    const room = formState.room.trim();
     const productUrl = formState.productUrl.trim();
     const priceCents = parseCurrencyInputToCents(formState.priceInput);
+    const requestedQuantity = formState.allowsQuantity
+      ? Number.parseInt(formState.quantityInput, 10)
+      : 1;
 
     if (!name || !productUrl || !priceCents) {
       setError("Preencha todos os campos obrigatórios de forma válida.");
+      return;
+    }
+
+    if (!isGiftRoom(room)) {
+      setError("Selecione um cômodo válido.");
+      return;
+    }
+
+    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1) {
+      setError("Informe uma quantidade válida.");
+      return;
+    }
+
+    if (editingGift && editingGift.reservedQuantity > requestedQuantity) {
+      setError("A quantidade total não pode ser menor que a quantidade já reservada.");
+      return;
+    }
+
+    if (
+      editingGift &&
+      editingGift.reservedQuantity > 0 &&
+      editingGift.allowsQuantity !== formState.allowsQuantity
+    ) {
+      setError("Não é possível alterar o modo de quantidade com reservas ativas.");
       return;
     }
 
@@ -120,6 +157,9 @@ export default function AdminPresentesPage() {
       if (editingGiftId && editingGift) {
         await updateGift(editingGiftId, editingGift, {
           name,
+          room,
+          allowsQuantity: formState.allowsQuantity,
+          requestedQuantity,
           priceCents,
           productUrl,
           isActive: formState.isActive,
@@ -130,6 +170,9 @@ export default function AdminPresentesPage() {
       } else if (formState.imageFile) {
         await createGift({
           name,
+          room,
+          allowsQuantity: formState.allowsQuantity,
+          requestedQuantity,
           priceCents,
           productUrl,
           isActive: formState.isActive,
@@ -192,6 +235,16 @@ export default function AdminPresentesPage() {
                             <span className="block max-w-[220px] truncate" title={item.name}>
                               {item.name}
                             </span>
+                            {item.room ? (
+                              <span className="mt-1 block max-w-[220px] truncate text-xs font-normal text-[#778069]" title={item.room}>
+                                {item.room}
+                              </span>
+                            ) : null}
+                            {item.allowsQuantity ? (
+                              <span className="mt-1 block text-xs font-normal text-[#778069]">
+                                {item.reservedQuantity}/{item.requestedQuantity} reservados
+                              </span>
+                            ) : null}
                           </td>
                           <td className="px-6 py-4 text-sm text-[#616955] w-28 whitespace-nowrap">
                             {formatCurrencyBRLFromCents(item.priceCents)}
@@ -260,6 +313,73 @@ export default function AdminPresentesPage() {
                   className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0 placeholder:text-[#9ca592]"
                 />
               </label>
+
+              <label className="block space-y-2">
+                <span className="text-xs tracking-[0.12em] font-semibold text-[#667235] uppercase">
+                  Cômodo
+                </span>
+                <select
+                  required
+                  value={formState.room}
+                  onChange={(event) =>
+                    setFormState((prev) => ({ ...prev, room: event.target.value }))
+                  }
+                  className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0 placeholder:text-[#9ca592]"
+                >
+                  <option value="">Selecione um cômodo</option>
+                  {GIFT_ROOMS.map((room) => (
+                    <option key={room} value={room}>
+                      {room}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="space-y-3 rounded-xl border border-[#d5dbc6] bg-[#f7f9f1] p-4">
+                <label className="inline-flex items-center gap-2 text-sm text-[#5f6652]">
+                  <input
+                    type="checkbox"
+                    checked={formState.allowsQuantity}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        allowsQuantity: event.target.checked,
+                        quantityInput: event.target.checked ? prev.quantityInput : "1",
+                      }))
+                    }
+                    disabled={Boolean(editingGift && editingGift.reservedQuantity > 0)}
+                    className="size-4 rounded border-[#c5ccb8] disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  Convidado pode escolher quantidade
+                </label>
+
+                {formState.allowsQuantity ? (
+                  <label className="block space-y-2">
+                    <span className="text-xs tracking-[0.12em] font-semibold text-[#667235] uppercase">
+                      Quantidade desejada
+                    </span>
+                    <input
+                      type="number"
+                      min={Math.max(1, editingGift?.reservedQuantity ?? 1)}
+                      step={1}
+                      required
+                      value={formState.quantityInput}
+                      onChange={(event) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          quantityInput: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none ring-0 placeholder:text-[#9ca592]"
+                    />
+                    {editingGift && editingGift.reservedQuantity > 0 ? (
+                      <p className="text-xs text-[#676f5c]">
+                        Já reservado: {editingGift.reservedQuantity} unidade(s).
+                      </p>
+                    ) : null}
+                  </label>
+                ) : null}
+              </div>
 
               <label className="block space-y-2">
                 <span className="text-xs tracking-[0.12em] font-semibold text-[#667235] uppercase">
