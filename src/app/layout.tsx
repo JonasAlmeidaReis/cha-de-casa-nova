@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | Lista de Presentes",
   },
   description:
-    "Protótipo de front-end para a lista de presentes de casamento.",
+    "Venha viver esse momento especial conosco.",
 };
 
 export default function RootLayout({
